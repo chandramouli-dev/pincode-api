@@ -198,21 +198,23 @@ Refresh periodically (`npm run refresh-data`) — GeoNames updates continuously 
 - **Offline pipeline** (`scripts/fetch-data.ts` → `scripts/build-snapshot.ts`): all resolution work (both tiers) happens at build time, not per-request. Re-run on a schedule and redeploy `data/snapshot.json`.
 - **Route definitions** (`src/app.ts`): a `buildApp()` factory that configures a Fastify instance and returns it *without* calling `.listen()`, so the exact same routes work in two different runtimes:
   - **`src/server.ts`** — calls `.listen()`, for local dev (`npm run dev`) and any environment where you own the long-running process (a VM, container, etc).
-  - **`api/index.ts`** — wraps the same app as a Vercel serverless function (see Deployment below); no `.listen()`, Vercel's Node runtime owns the HTTP server instead.
+  - **`src/vercelHandler.ts`** — wraps the same app for Vercel (see Deployment below); no `.listen()`, Vercel's Node runtime owns the HTTP server instead. This file is *source*, not what's deployed directly — see Deployment for why.
 
-`data/snapshot.json` is imported (`import snapshotJson from "../data/snapshot.json" with { type: "json" }`) rather than read via `fs.readFileSync`, specifically so it gets bundled directly into the built output in both runtimes — no filesystem path assumptions that could quietly break between a local server and a serverless function's filesystem layout.
+`data/snapshot.json` is imported (`import snapshotJson from "../data/snapshot.json" with { type: "json" }`) rather than read via `fs.readFileSync`, specifically so it gets bundled directly into the built output in every runtime — no filesystem path assumptions that could quietly break between a local server and a serverless function's filesystem layout.
 
 ## Deployment
 
 ### Vercel (serverless)
 
 1. Push this repo to GitHub (see below).
-2. On [vercel.com](https://vercel.com), **Add New → Project → Import** the GitHub repo. No configuration needed — `vercel.json` already rewrites every path to `api/index.ts`, and Vercel auto-detects the Node runtime from `package.json`'s `engines.node`.
+2. On [vercel.com](https://vercel.com), **Add New → Project → Import** the GitHub repo. No configuration needed — Vercel runs `npm run vercel-build` automatically (see below), and `vercel.json` rewrites every path to the resulting function.
 3. Vercel deploys automatically on every push to the default branch from then on.
 
-How it works: `api/index.ts` builds the same Fastify app as local dev (see Architecture above) and hands each request to it via `app.server.emit("request", req, res)` — the standard pattern for running Fastify under a platform that supplies its own HTTP server rather than letting Fastify own one. Verify this wiring locally anytime with `npm run test:vercel-handler`, which drives the actual Vercel handler function through a plain Node `http.Server`, the same way Vercel's runtime would, without needing the Vercel CLI or an account.
+**Why there's a pre-bundling step.** Vercel's default Node.js builder transpiles each `.ts` file in a project individually rather than bundling — handing it a multi-file `src/` tree to resolve on its own produced three straight rounds of confusing runtime failures during this project's actual deployment (`Cannot find module '.../src/app.ts'`, then `Cannot find module '.../src/dataStore'`, then `Invalid export found in module '.../src/app.js'` as Vercel's own function-entry detection got confused by the multi-file output it had produced). Rather than keep reverse-engineering Vercel's internal per-file heuristics, `npm run vercel-build` (`scripts/build-vercel-function.mjs`) pre-bundles `src/vercelHandler.ts` with esbuild into a single, self-contained `api/index.js` — the dataset inlined directly, `fastify` kept as a normal external import resolved from `node_modules`, and critically **zero remaining cross-file imports for Vercel to resolve on its own**. `api/index.js` is generated (gitignored, not committed) — Vercel produces it fresh on every deploy, and you can too: `npm run vercel-build` locally any time.
 
-Cold starts: the ~6MB dataset is bundled into the function and parsed once per cold start (a few hundred ms), then reused across warm invocations via the module-scope cache in `api/index.ts`.
+How the handler itself works: it builds the same Fastify app as local dev (see Architecture above) and hands each request to it via `app.server.emit("request", req, res)` — the standard pattern for running Fastify under a platform that supplies its own HTTP server rather than letting Fastify own one. Verify this end-to-end anytime with `npm run test:vercel-handler`, which bundles the function and then drives the *exact* resulting artifact through a plain Node `http.Server`, the same way Vercel's runtime would — no Vercel CLI or account needed to catch a regression here before pushing.
+
+Cold starts: the ~6MB dataset is bundled into the function and parsed once per cold start (a few hundred ms), then reused across warm invocations via the module-scope cache in `src/vercelHandler.ts`.
 
 ### Anywhere else (long-running process)
 

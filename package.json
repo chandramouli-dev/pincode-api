@@ -12,16 +12,18 @@
     "build-snapshot": "tsx scripts/build-snapshot.ts",
     "refresh-data": "npm run fetch-data && npm run build-snapshot",
     "dev": "tsx watch src/server.ts",
-    "typecheck": "tsc -p tsconfig.json",
+    "typecheck": "npm run vercel-build && tsc -p tsconfig.json",
     "start": "tsx src/server.ts",
     "test": "tsx scripts/smoke-test.ts",
-    "test:vercel-handler": "tsx scripts/verify-vercel-handler.ts"
+    "vercel-build": "node scripts/build-vercel-function.mjs",
+    "test:vercel-handler": "npm run vercel-build && tsx scripts/verify-vercel-handler.ts"
   },
   "dependencies": {
     "fastify": "^5.1.0"
   },
   "devDependencies": {
     "@types/node": "^22.9.0",
+    "esbuild": "^0.28.2",
     "tsx": "^4.19.2",
     "typescript": "^5.6.3"
   }
