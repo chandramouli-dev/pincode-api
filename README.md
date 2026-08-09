@@ -197,7 +197,7 @@ Refresh periodically (`npm run refresh-data`) — GeoNames updates continuously 
 - **In-memory serving** (`src/dataStore.ts`): ~19k pincodes / ~6MB JSON, imported directly into the module (not read from disk at runtime — see below) and served straight from a `Map`, no database round trip per request.
 - **Offline pipeline** (`scripts/fetch-data.ts` → `scripts/build-snapshot.ts`): all resolution work (both tiers) happens at build time, not per-request. Re-run on a schedule and redeploy `data/snapshot.json`.
 - **Route definitions** (`src/createApp.ts`): a `buildApp()` factory that configures a Fastify instance and returns it *without* calling `.listen()`, so the exact same routes work in two different runtimes:
-  - **`src/localServer.ts`** — calls `.listen()`, for local dev (`npm run dev`) and any environment where you own the long-running process (a VM, container, etc).
+  - **`src/server.ts`** — calls `.listen()`, for local dev (`npm run dev`) and any environment where you own the long-running process (a VM, container, etc).
   - **`src/vercelHandler.ts`** — wraps the same app for Vercel (see Deployment below); no `.listen()`, Vercel's Node runtime owns the HTTP server instead. This file is *source*, not what's deployed directly — see Deployment for why.
 
 `data/snapshot.json` is imported (`import snapshotJson from "../data/snapshot.json" with { type: "json" }`) rather than read via `fs.readFileSync`, specifically so it gets bundled directly into the built output in every runtime — no filesystem path assumptions that could quietly break between a local server and a serverless function's filesystem layout.
@@ -220,7 +220,7 @@ Cold starts: the ~6MB dataset is bundled into the function and parsed once per c
 
 ### Anywhere else (long-running process)
 
-`npm run typecheck` checks types; there's no compile step to run since `src/localServer.ts` is executed directly via `tsx` in both `dev` and `start`. Ship the repo (including `data/snapshot.json`) and run `npm ci && npm start` behind a process manager (systemd, pm2, a container) with `PORT` set.
+`npm run typecheck` checks types; there's no compile step to run since `src/server.ts` is executed directly via `tsx` in both `dev` and `start`. Ship the repo (including `data/snapshot.json`) and run `npm ci && npm start` behind a process manager (systemd, pm2, a container) with `PORT` set.
 
 ### Suggested next steps for production
 

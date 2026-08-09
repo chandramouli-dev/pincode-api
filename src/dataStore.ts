@@ -4,7 +4,7 @@ import snapshotJson from "../data/snapshot.json" with { type: "json" };
 // Imported (not read from disk at runtime) so the ~6MB dataset is bundled
 // directly into the built output -- this is what makes the exact same
 // dataStore work unmodified both as a long-running local server
-// (src/localServer.ts) and as a Vercel serverless function
+// (src/server.ts) and as a Vercel serverless function
 // (src/vercelHandler.ts, bundled into api/index.js), with no filesystem
 // path assumptions that could break across those two environments.
 const snapshot = snapshotJson as unknown as Snapshot;
