@@ -46,7 +46,14 @@ await build({
   platform: "node",
   format: "esm",
   target: "node20",
-  external: ["fastify"],
+  // exceljs (used by the /v1/export/*.xlsx routes) kept external for the
+  // same reason as fastify: it's a real npm dependency (package.json
+  // "dependencies", not "devDependencies" -- Vercel's npm install must
+  // see it), and bundling a library with its own zip/stream internals is
+  // meaningfully riskier than letting Node resolve it normally from
+  // node_modules at runtime, on a project that has already hit several
+  // rounds of esbuild-bundling surprises over far simpler code.
+  external: ["fastify", "exceljs"],
 });
 
 console.log(`Bundled -> ${outfile}`);

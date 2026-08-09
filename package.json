@@ -10,16 +10,23 @@
   "scripts": {
     "fetch-data": "tsx scripts/fetch-data.ts",
     "build-snapshot": "tsx scripts/build-snapshot.ts",
-    "refresh-data": "npm run fetch-data && npm run build-snapshot",
+    "build-post-office-snapshot": "tsx scripts/build-post-office-snapshot.ts",
+    "refresh-data": "npm run fetch-data && npm run build-snapshot && npm run build-post-office-snapshot",
     "dev": "tsx watch src/server.ts",
     "typecheck": "tsc -p tsconfig.json",
     "start": "tsx src/server.ts",
     "test": "tsx scripts/smoke-test.ts",
+    "export-data": "tsx scripts/export-data.ts",
+    "export:pincodes": "tsx scripts/export-pincodes.ts",
+    "export:post-offices": "tsx scripts/export-post-offices.ts",
+    "export:all": "npm run export:pincodes && npm run export:post-offices",
+    "validate:data": "tsx scripts/validate-data.ts",
     "vercel-build": "node scripts/build-vercel-function.mjs",
     "test:vercel-handler": "npm run vercel-build && tsx scripts/verify-vercel-handler.ts"
   },
   "dependencies": {
-    "fastify": "^5.1.0"
+    "fastify": "^5.1.0",
+    "exceljs": "^4.4.0"
   },
   "devDependencies": {
     "@types/node": "^22.9.0",

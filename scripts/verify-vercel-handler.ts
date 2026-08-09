@@ -34,5 +34,21 @@ server.listen(0, async () => {
   const notFound = await fetch(`${base}/v1/pincode/999999`);
   console.log("GET /v1/pincode/999999 ->", notFound.status);
 
+  // Dataset 2 + exports specifically exercise exceljs resolving as an
+  // external dependency in the bundled context (not just under tsx) --
+  // the highest-risk new surface area, so it's checked here, not just in
+  // scripts/smoke-test.ts.
+  const allPincodes = await fetch(`${base}/v1/pincodes/all`);
+  const allBody = await allPincodes.json();
+  console.log("GET /v1/pincodes/all ->", allPincodes.status, "count:", allBody.count);
+
+  const postOffices = await fetch(`${base}/v1/post-offices?pincode=624610`);
+  const poBody = await postOffices.json();
+  console.log("GET /v1/post-offices?pincode=624610 ->", postOffices.status, JSON.stringify(poBody.results?.map((r: any) => [r.officeName, r.city])));
+
+  const xlsx = await fetch(`${base}/v1/export/post-offices.xlsx`);
+  const xlsxBuf = await xlsx.arrayBuffer();
+  console.log("GET /v1/export/post-offices.xlsx (bundled exceljs) ->", xlsx.status, "bytes:", xlsxBuf.byteLength, xlsx.headers.get("content-type"));
+
   server.close();
 });

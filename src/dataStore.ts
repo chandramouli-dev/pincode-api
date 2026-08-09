@@ -25,3 +25,10 @@ export function lookupPincode(pincode: string): PincodeRecord | undefined {
 export function lookupPincodes(pincodes: string[]): (PincodeRecord | undefined)[] {
   return pincodes.map((p) => byPincode.get(p));
 }
+
+/** All ~19k unique-pincode records -- backs GET /v1/pincodes/all and the
+ *  pincode CSV/XLSX exports. Purely additive: existing lookups above are
+ *  unchanged. */
+export function getAllPincodeRecords(): PincodeRecord[] {
+  return snapshot.records;
+}

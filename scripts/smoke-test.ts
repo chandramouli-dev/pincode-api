@@ -86,6 +86,74 @@ async function main() {
   console.log(`${batchOk ? "PASS" : "FAIL"}  batch lookup -> ${JSON.stringify(batchBody.results.map((r: any) => [r.pincode, r.found]))}`);
   if (!batchOk) failures++;
 
+  // --- Dataset 1: GET /v1/pincodes/all ---
+  const allRes = await fetch(`${BASE_URL}/v1/pincodes/all`);
+  const allBody = await allRes.json();
+  const allOk = allRes.ok && allBody.count > 19000 && allBody.results.length === allBody.count;
+  console.log(`${allOk ? "PASS" : "FAIL"}  GET /v1/pincodes/all -> count: ${allBody.count}`);
+  if (!allOk) failures++;
+
+  const uniquePincodes = new Set(allBody.results.map((r: any) => r.pincode));
+  const noDupes = uniquePincodes.size === allBody.results.length;
+  console.log(`${noDupes ? "PASS" : "FAIL"}  no duplicate unique pincodes -> ${uniquePincodes.size}/${allBody.results.length} unique`);
+  if (!noDupes) failures++;
+
+  const csvRes = await fetch(`${BASE_URL}/v1/pincodes/all?format=csv`);
+  const csvText = await csvRes.text();
+  const csvOk =
+    csvRes.ok &&
+    csvRes.headers.get("content-type")?.includes("text/csv") &&
+    csvRes.headers.get("content-disposition")?.includes('filename="india-pincodes.csv"') &&
+    csvText.startsWith("Pincode,State,District,City");
+  console.log(`${csvOk ? "PASS" : "FAIL"}  GET /v1/pincodes/all?format=csv -> ${csvRes.headers.get("content-type")}, ${csvRes.headers.get("content-disposition")}`);
+  if (!csvOk) failures++;
+
+  // --- Dataset 2: GET /v1/post-offices ---
+  const poRes = await fetch(`${BASE_URL}/v1/post-offices?page=1&limit=10`);
+  const poBody = await poRes.json();
+  const poOk = poRes.ok && poBody.page === 1 && poBody.limit === 10 && poBody.results.length === 10 && poBody.total > 150000 && poBody.totalPages === Math.ceil(poBody.total / 10);
+  console.log(`${poOk ? "PASS" : "FAIL"}  GET /v1/post-offices?page=1&limit=10 -> total: ${poBody.total}, totalPages: ${poBody.totalPages}, results: ${poBody.results.length}`);
+  if (!poOk) failures++;
+
+  const poPinRes = await fetch(`${BASE_URL}/v1/post-offices?pincode=624610`);
+  const poPinBody = await poPinRes.json();
+  const pincodeCityRes = await fetch(`${BASE_URL}/v1/pincode/624610`);
+  const pincodeCityBody = await pincodeCityRes.json();
+  const poPinOk =
+    poPinRes.ok &&
+    poPinBody.total === 2 && // legitimate duplicate pincode across 2 post offices, preserved not deduplicated
+    poPinBody.results.every((r: any) => r.city === pincodeCityBody.city); // city mapping agrees with GET /v1/pincode/:code
+  console.log(
+    `${poPinOk ? "PASS" : "FAIL"}  GET /v1/post-offices?pincode=624610 -> ${poPinBody.total} offices, cities: ${JSON.stringify(poPinBody.results.map((r: any) => r.city))}, matches GET /v1/pincode/624610's city ("${pincodeCityBody.city}")`,
+  );
+  if (!poPinOk) failures++;
+
+  const poCityRes = await fetch(`${BASE_URL}/v1/post-offices?city=Palani`);
+  const poCityBody = await poCityRes.json();
+  const poCityOk = poCityRes.ok && poCityBody.total > 0 && poCityBody.results.every((r: any) => r.city === "Palani");
+  console.log(`${poCityOk ? "PASS" : "FAIL"}  GET /v1/post-offices?city=Palani -> ${poCityBody.total} offices, all city === "Palani": ${poCityOk}`);
+  if (!poCityOk) failures++;
+
+  // --- Downloadable exports ---
+  const expPinRes = await fetch(`${BASE_URL}/v1/export/pincodes.csv`);
+  const expPinOk =
+    expPinRes.ok &&
+    expPinRes.headers.get("content-type")?.includes("text/csv") &&
+    expPinRes.headers.get("content-disposition")?.includes('filename="india-pincodes.csv"');
+  console.log(`${expPinOk ? "PASS" : "FAIL"}  GET /v1/export/pincodes.csv -> ${expPinRes.headers.get("content-type")}, ${expPinRes.headers.get("content-disposition")}`);
+  if (!expPinOk) failures++;
+
+  const expPoRes = await fetch(`${BASE_URL}/v1/export/post-offices.csv`);
+  const expPoText = await expPoRes.text();
+  const expPoOk =
+    expPoRes.ok &&
+    expPoRes.headers.get("content-type")?.includes("text/csv") &&
+    expPoRes.headers.get("content-disposition")?.includes('filename="india-post-offices.csv"') &&
+    expPoText.startsWith("Office Name,Pincode,State,District,City,Office Type,Delivery,Division,Region,Circle") &&
+    (expPoText.split("\n").find((l) => l.includes("624610")) ?? "").endsWith(",Palani,,,,,"); // City present in export even though office_type/etc are blank
+  console.log(`${expPoOk ? "PASS" : "FAIL"}  GET /v1/export/post-offices.csv -> headers ok, City column present and populated`);
+  if (!expPoOk) failures++;
+
   console.log(failures === 0 ? "\nAll checks passed." : `\n${failures} check(s) failed.`);
   process.exit(failures === 0 ? 0 : 1);
 }
