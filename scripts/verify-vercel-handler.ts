@@ -3,10 +3,10 @@
  *  without Fastify ever calling .listen() itself. Not part of the regular
  *  test suite; just a sanity check for the serverless wiring. */
 import { createServer } from "node:http";
-import handler from "../api/index";
+import handler from "../api/index.js";
 
 const server = createServer((req, res) => {
-  handler(req, res).catch((err) => {
+  handler(req, res).catch((err: unknown) => {
     console.error(err);
     res.statusCode = 500;
     res.end("error");

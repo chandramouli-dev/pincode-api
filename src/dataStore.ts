@@ -1,5 +1,5 @@
-import type { PincodeRecord, Snapshot } from "./types";
-import snapshotJson from "../data/snapshot.json";
+import type { PincodeRecord, Snapshot } from "./types.js";
+import snapshotJson from "../data/snapshot.json" with { type: "json" };
 
 // Imported (not read from disk at runtime) so the ~6MB dataset is bundled
 // directly into the built output -- this is what makes the exact same
