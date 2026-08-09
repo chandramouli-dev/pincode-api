@@ -42,7 +42,7 @@
  */
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import path from "node:path";
-import type { PincodeRecord, Snapshot, CitySource, StatutoryLocalBody, LocalBodyClassification } from "../src/types.ts";
+import type { PincodeRecord, Snapshot, CitySource, StatutoryLocalBody, LocalBodyClassification } from "../src/types";
 
 const RAW_DIR = path.resolve(import.meta.dirname, "..", "data", "raw");
 const OUT_PATH = path.resolve(import.meta.dirname, "..", "data", "snapshot.json");

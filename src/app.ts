@@ -1,5 +1,5 @@
 import Fastify, { type FastifyInstance } from "fastify";
-import { getMeta, lookupPincode, lookupPincodes } from "./dataStore.ts";
+import { getMeta, lookupPincode, lookupPincodes } from "./dataStore";
 
 const PINCODE_RE = /^[1-9][0-9]{5}$/;
 

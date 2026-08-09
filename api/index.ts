@@ -1,6 +1,6 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
 import type { FastifyInstance } from "fastify";
-import { buildApp } from "../src/app.ts";
+import { buildApp } from "../src/app";
 
 // Vercel's Node runtime hands us a plain (req, res) pair per invocation and
 // owns the actual HTTP server -- Fastify never calls .listen() here (that's
