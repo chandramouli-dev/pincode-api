@@ -1,10 +1,10 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
 import type { FastifyInstance } from "fastify";
-import { buildApp } from "./app.js";
+import { buildApp } from "./createApp.js";
 
 // Vercel's Node runtime hands us a plain (req, res) pair per invocation and
 // owns the actual HTTP server -- Fastify never calls .listen() here (that's
-// only for src/server.ts's local/long-running mode). Instead we build the
+// only for src/localServer.ts's local/long-running mode). Instead we build the
 // Fastify instance once per warm lambda (cached in module scope, so it
 // survives across invocations on the same instance, not just within one),
 // wait for all routes/plugins to finish registering via .ready(), then hand

@@ -11,9 +11,9 @@
     "fetch-data": "tsx scripts/fetch-data.ts",
     "build-snapshot": "tsx scripts/build-snapshot.ts",
     "refresh-data": "npm run fetch-data && npm run build-snapshot",
-    "dev": "tsx watch src/server.ts",
+    "dev": "tsx watch src/localServer.ts",
     "typecheck": "npm run vercel-build && tsc -p tsconfig.json",
-    "start": "tsx src/server.ts",
+    "start": "tsx src/localServer.ts",
     "test": "tsx scripts/smoke-test.ts",
     "vercel-build": "node scripts/build-vercel-function.mjs",
     "test:vercel-handler": "npm run vercel-build && tsx scripts/verify-vercel-handler.ts"

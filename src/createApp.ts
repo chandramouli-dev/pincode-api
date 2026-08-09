@@ -9,9 +9,11 @@ interface BatchBody {
 
 /** Builds a configured Fastify instance without starting a listener, so the
  *  same route definitions serve two different runtimes unmodified:
- *   - src/server.ts calls .listen() on this for local dev / a long-running server.
- *   - api/index.ts wraps this as a Vercel serverless function (no .listen()
- *     -- Vercel's Node runtime owns the HTTP server; see that file's comment).
+ *   - src/localServer.ts calls .listen() on this for local dev / a long-running server.
+ *   - src/vercelHandler.ts wraps this for Vercel (no .listen() -- Vercel's
+ *     Node runtime owns the HTTP server; see that file's comment). It's
+ *     bundled by scripts/build-vercel-function.mjs into the committed
+ *     api/index.js, which is what Vercel actually deploys.
  */
 export function buildApp(): FastifyInstance {
   const app = Fastify({ logger: true });

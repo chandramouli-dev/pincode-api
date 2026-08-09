@@ -1,12 +1,12 @@
 /**
- * Pre-bundles src/vercelHandler.ts into a single, self-contained api/index.js
- * BEFORE Vercel's own build step runs (this is invoked as the "vercel-build"
- * npm script, which Vercel runs automatically).
+ * Pre-bundles src/vercelHandler.ts into a single, self-contained api/index.js.
+ * Run this locally and commit the result -- Vercel does NOT run this
+ * automatically (see the "api/index.js is committed" note below for why).
  *
- * Why: Vercel's default Node.js builder transpiles each .ts file in the
- * dependency graph individually rather than bundling, and handing it a
- * multi-file src/ tree to resolve on its own produced two rounds of
- * confusing runtime failures in this project:
+ * Why bundling is necessary at all: Vercel's default Node.js builder
+ * transpiles each .ts file in the dependency graph individually rather
+ * than bundling, and handing it a multi-file src/ tree to resolve on its
+ * own produced three rounds of confusing runtime failures in this project:
  *
  *   1. Cannot find module '/var/task/src/app.ts' (literal .ts import
  *      specifier left unresolved by native Node ESM)
@@ -22,10 +22,15 @@
  * npm dependency), and the ~6MB snapshot JSON inlined directly into the
  * bundle.
  *
- * api/index.js is gitignored (generated, not committed) -- Vercel produces
- * it fresh on every deploy via this script. Run `npm run vercel-build`
- * locally any time you want to test the exact artifact Vercel will run;
- * scripts/verify-vercel-handler.ts then exercises it end-to-end.
+ * api/index.js is committed to git, not generated at deploy time -- a
+ * fourth round of Vercel-side surprises (a custom buildCommand pulled in
+ * an unrelated "where's your static site's public/ directory" requirement
+ * this project has no use for) made a build artifact we fully control more
+ * predictable than continuing to configure around Vercel's own build step.
+ * Run `npm run vercel-build` and commit the result whenever
+ * src/createApp.ts, src/dataStore.ts, src/types.ts, src/vercelHandler.ts,
+ * or data/snapshot.json change. scripts/verify-vercel-handler.ts then
+ * exercises the regenerated artifact end-to-end.
  */
 import { build } from "esbuild";
 import { mkdirSync } from "node:fs";
